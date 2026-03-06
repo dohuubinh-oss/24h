@@ -1,0 +1,5 @@
+Hai hàm login và register trong context chỉ dùng mỗi ở đay lên không cần phức tạp hóa vấn đề tôi muốn đảm bảo sự rõ ràng và đơn giản
+tách các component Input và Button :
+    FormInput: Một trường input văn bản chung bao gồm label và input.
+    PasswordInput: Một biến thể của FormInput nhưng có thêm nút "ẩn/hiện" mật khẩu.
+    SubmitButton: Nút submit chính của form, có xử lý trạng thái loading

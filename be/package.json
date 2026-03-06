@@ -1,0 +1,29 @@
+{
+  "name": "node-express-api",
+  "description": "Simple api sample in Node",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js"
+  },
+  "author": "Google LLC",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@sendgrid/mail": "^8.1.6",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.2",
+    "google-auth-library": "^10.6.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.23.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,30 @@
+Tôi sẽ tải lên các file chứa đề toán, nhiệm vụ của bạn là trích xuất ảnh nếu có thể, và xuất ra json theo hướng dẫn câu promp bên dưới, sau đó  định dạng lại các công thức toán học bằng LaTeX, loại bỏ các ký tự xuống dòng không hợp lệ và thay thế chúng bằng \n khi cần.:
+Your task is to act as a Math Subject Matter Expert. Analyze the following Vietnamese math problem and structure it into a single, valid JSON object. 
+
+RULES:
+- Your response MUST be ONLY the JSON object. Strictly do not wrap the response in any markdown code blocks (like ```json or '''json). Do not include any introductory or explanatory text. The response must start with { and end with }.
+- Preserve ALL mathematical formulas in their original LaTeX format, ALWAYS enclosed in $...$ for inline or $$...$$ for block markers. 
+- IMPORTANT: Ensure all backslashes (\) in LaTeX commands are preserved correctly within the JSON string (e.g., use "\\frac" or ensure the raw "\" is not omitted). Do not escape newlines or other characters in a way that breaks JSON parsing.
+- Tables & Statistics: If the problem contains a table or statistical data, you MUST convert it into a valid LaTeX \begin{tabular} environment.
+- Content Merging: If the problem has multiple sub-parts (a, b, c...) or multiple items, DO NOT create a sub-questions array. Combine the lead-in text and all sub-parts into the single "content" field
+- Type Logic:
+    - If the question contains multiple-choice options (A, B, C, D), its type is 'Trắc nghiệm'.
+    - If it is a series of exercises (e.g., "Giải các phương trình sau: a... b...") without options, its type is 'Tự luận'.
+
+
+The JSON object must follow this exact structure:
+{
+  "content": "The entire problem text (all parts a, b, c not merged), with LaTeX formulas in $...$ and tables in \begin{tabular}.",
+  "type": "String, MUST be one of: 'Trắc nghiệm', 'Tự luận' (Required)",
+  "grade": "String (e.g., 'Khối 12')",
+  "topic": "String (e.g., 'Hàm số & Đồ thị')",
+  "difficulty": "One of: 'Nhận biết', 'Thông hiểu', 'Vận dụng', 'Vận dụng cao'",
+  "point": "Float (Suggested point for the main question, e.g., 1.0)",
+  "tags": ["Array", "of", "strings"],
+  "options": [{ "value": "Option text with LaTeX $...$", "isCorrect": boolean }],
+  "solution": "The complete, detailed solution for all parts, using LaTeX.",
+  "notes": "Key concepts and important notes with LaTeX $...$",
+  "imageUrl": "URL string or null"
+}
+
+Here is the math problem content to analyze:

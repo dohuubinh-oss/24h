@@ -1,0 +1,1 @@
+đây là nguồn thuần javascript

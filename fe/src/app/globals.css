@@ -1,0 +1,12 @@
+@import 'katex/dist/katex.min.css';
+@import "tailwindcss";
+
+/* Set the default font for the entire application using the CSS variable from layout.js */
+body {
+  font-family: var(--font-display), sans-serif;
+}
+
+/* Define a specific class for elements that need a different, more traditional font, like for math formulas */
+.latex-font {
+  font-family: "Times New Roman", Times, serif;
+}

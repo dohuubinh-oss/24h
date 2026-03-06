@@ -1,0 +1,62 @@
+Trang đăng ký của bạn (fe/src/app/register/page.js) đã được xây dựng rất tốt! Code đã xử lý hầu hết các trường hợp cần thiết:
+
+Quản lý state: Sử dụng useState để quản lý thông tin người dùng nhập vào, trạng thái loading và thông báo lỗi.
+Xác thực cơ bản: Kiểm tra xem mật khẩu xác nhận có khớp không.
+Gọi API: Gửi yêu cầu POST đến /api/v1/auth/register với thông tin người dùng.
+Xử lý kết quả:
+Nếu thành công, gọi hàm register từ AuthContext và chuyển hướng về trang chủ.
+Nếu thất bại, hiển thị thông báo lỗi cho người dùng.
+Giao diện người dùng: Giao diện đầy đủ, có cả chức năng ẩn/hiện mật khẩu để tăng trải nghiệm người dùng.
+Về cơ bản, chức năng đăng ký bằng email đã hoạt động.
+
+Code của bạn trong AuthContext.js được viết rất tốt và tuân thủ các phương pháp bảo mật hiện đại:
+
+Bảo mật: Bạn không lưu trữ JWT token ở phía client (ví dụ: trong localStorage). Thay vào đó, bạn sử dụng một phương pháp an toàn hơn là dựa vào cookie HTTPOnly. Việc gọi đến /api/v1/auth/me trong hàm checkUserLoggedIn để lấy thông tin người dùng đã chứng minh điều này. Đây là cách làm được khuyến nghị để chống lại các cuộc tấn công XSS.
+Quản lý trạng thái: Hàm useEffect được dùng để kiểm tra trạng thái đăng nhập của người dùng ngay khi ứng dụng được tải. Kết hợp với biến loading, nó giúp ngăn chặn việc hiển thị giao diện không chính xác (ví dụ: hiển thị trang cho khách trong khi người dùng đã đăng nhập) trong giây lát.
+Chức năng logout: Chức năng logout được xử lý rất cẩn thận. Nó không chỉ xóa thông tin người dùng ở client (setUser(null)) mà còn chủ động gọi API backend để xóa cookie trên server. Điều này đảm bảo phiên đăng nhập được chấm dứt hoàn toàn.
+
+Cách 3: Luồng Authorization Code với Frontend UX Pop-up.
+
+Chính xác như bạn mô tả, luồng này sẽ hoạt động như sau:
+
+Frontend (Dùng @react-oauth/google):
+
+Khi người dùng nhấp vào nút "Đăng nhập với Google", thay vì chuyển hướng cả trang, thư viện sẽ mở một cửa sổ pop-up.
+Người dùng tương tác với Google trong pop-up đó.
+Sau khi thành công, Google không trả về id_token mà trả về một thứ gọi là authorization code (mã ủy quyền) cho frontend.
+Frontend nhận được code này và ngay lập tức gửi nó đến một endpoint trên backend của bạn (ví dụ: /api/v1/auth/google/callback).
+Backend (Dùng google-auth-library):
+
+Backend nhận authorization code.
+Dùng thư viện google-auth-library, backend sẽ bí mật trao đổi code này với server của Google để nhận về access_token, refresh_token, và id_token. Quá trình này hoàn toàn diễn ra giữa server-to-server, trình duyệt không hề biết.
+Backend xác thực thông tin người dùng, tạo/cập nhật user trong database.
+Backend tạo ra JWT token của chính bạn và lưu vào cookie HttpOnly.
+Backend trả về một response thành công (ví dụ status: 200) cho frontend.
+Frontend:
+
+Nhận được response thành công từ backend, biết rằng việc đăng nhập đã hoàn tất.
+Cập nhật trạng thái (ví dụ: setUser) và chuyển hướng người dùng đến trang dashboard.
+
+
+Đây là tiêu chuẩn vàng trong ngành hiện nay, được sử dụng bởi các hệ thống lớn như Google, Facebook. Nó cân bằng được cả hai yếu tố: chưa làm
+
+Access Token (JWT):
+
+Thời gian hết hạn RẤT NGẮN (ví dụ: 15 phút).
+Nhiệm vụ: Dùng để xác thực cho mỗi yêu cầu (request) đến API.
+Lưu trữ: Có thể lưu ở bộ nhớ của frontend. Vì nó hết hạn nhanh nên rủi ro bị đánh cắp được giảm thiểu.
+Refresh Token:
+
+Thời gian hết hạn RẤT DÀI (ví dụ: 90 ngày).
+Nhiệm vụ: Chỉ có một nhiệm vụ duy nhất là dùng để "làm mới" (lấy) một Access Token mới khi Access Token cũ hết hạn.
+Lưu trữ: Phải được lưu trữ cực kỳ an toàn. HttpOnly cookie chính là nơi hoàn hảo để lưu Refresh Token.
+Luồng hoạt động sẽ như thế này:
+
+Người dùng đăng nhập. Server trả về một Access Token (15 phút) và một Refresh Token (90 ngày, lưu trong HttpOnly cookie).
+Frontend dùng Access Token để gọi API.
+Sau 15 phút, Access Token hết hạn, API trả về lỗi 401 Unauthorized.
+Frontend (thường dùng một interceptor) tự động nhận biết lỗi này, nó sẽ âm thầm gọi đến một endpoint đặc biệt (ví dụ: /api/v1/auth/refresh-token).
+Server nhận Refresh Token từ HttpOnly cookie, xác thực nó, và cấp lại một Access Token mới (lại có hạn 15 phút).
+Frontend nhận Access Token mới và tự động thực hiện lại yêu cầu API đã thất bại ở bước 3.
+→ Người dùng không hề hay biết quá trình này diễn ra. Họ chỉ thấy ứng dụng hoạt động mượt mà và họ không bao giờ bị đăng xuất.
+ hiển thị : Chỉ cài đặt katex: Chúng ta sẽ không dùng react-katex. Chúng ta sẽ cài đặt thư viện katex gốc và CSS của nó. Điều này giúp loại bỏ lớp trung gian không cần thiết.

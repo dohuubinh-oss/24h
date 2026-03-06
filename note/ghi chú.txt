@@ -1,0 +1,5 @@
+icon dùng lucide react, hỗ trợ đa màn hình: mobile, full hd, 2k 4k
+các cải tiến về SEO, performance
+dùng axios có sử dụng interceptors kết hợp Với Middleware để bảo vệ route chống truy cập
+dùng access token (lưu trong state của react) và refesh token lưu trong cookie để xử lý đăng xuất đăng nhập
+Khi thực hiện một yêu cầu mạng(gọi api)  từ bên trong một Server Component, chúng ta bắt buộc phải sử dụng một URL tuyệt đối (Absolute URL).

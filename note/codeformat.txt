@@ -1,0 +1,4 @@
+Xây dựng code phải đảm bảo các nguyên tắc sau:
+- Nguyên tắc DRY (Don't Repeat Yourself).
+- Tính nhất quán: nhất quán giữa frontend và backend.
+- Giảm thiểu code:code càng đơn giản càng tốt.
