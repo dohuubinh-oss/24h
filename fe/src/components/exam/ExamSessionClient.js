@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic'; 
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation'; // Import useRouter
 import {
   Menu,
   Timer,
@@ -12,15 +13,14 @@ import {
   Send,
   CheckCircle2,
   LayoutGrid,
-  Sparkles, 
-  Lightbulb, 
+  Lightbulb,
   UploadCloud,
   X,
   ScanLine,
 } from 'lucide-react';
 
 const TiptapEditor = dynamic(() => import('../editor/TiptapEditor'), {
-  ssr: false, 
+  ssr: false,
   loading: () => (
     <div className="flex-1 w-full bg-transparent text-[#141414] p-4">
       <p className="text-slate-400">Đang tải trình soạn thảo...</p>
@@ -28,17 +28,8 @@ const TiptapEditor = dynamic(() => import('../editor/TiptapEditor'), {
   ),
 });
 
-const genAI = {
-  models: {
-    generateContent: async ({ prompt }) => {
-      console.log("--- AI Prompt ---", prompt);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      return { text: "Đây là lời giải mẫu từ AI. Logic thật sẽ được kết nối sau." };
-    }
-  }
-};
-
 export default function ExamSessionClient({ exam }) {
+  const router = useRouter(); // Khởi tạo router
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [flagged, setFlagged] = useState(new Set());
@@ -46,13 +37,11 @@ export default function ExamSessionClient({ exam }) {
 
   const [studentAnswer, setStudentAnswer] = useState('');
   const [isSaved, setIsSaved] = useState(true);
-  const [showSolution, setShowSolution] = useState(false);
-  const [aiResponse, setAiResponse] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // State để theo dõi việc nộp bài
 
   const fileInputRef = useRef(null);
-  const [handwrittenImage, setHandwrittenImage] = useState(null); 
+  const [handwrittenImage, setHandwrittenImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [handwrittenImageFile, setHandwrittenImageFile] = useState(null);
@@ -65,6 +54,9 @@ export default function ExamSessionClient({ exam }) {
     const timer = setInterval(() => {
       if (timeLeft > 0) {
         setTimeLeft(prev => prev - 1);
+      } else {
+        // Tự động nộp bài khi hết giờ
+        handleSubmit(true); // Gọi hàm nộp bài
       }
     }, 1000);
     return () => clearInterval(timer);
@@ -85,14 +77,12 @@ export default function ExamSessionClient({ exam }) {
       const savedAnswer = answers[currentQuestionIndex];
       setStudentAnswer(typeof savedAnswer === 'string' ? savedAnswer : '');
     }
-    setShowHint(false); 
-    setShowSolution(false); 
-    setAiResponse('');
+    setShowHint(false);
     setHandwrittenImage(null);
     setHandwrittenImageFile(null);
     setUploadError('');
   }, [currentQuestionIndex, currentQuestion, answers]);
-  
+
   useEffect(() => {
     return () => {
       if (handwrittenImage) {
@@ -129,22 +119,6 @@ export default function ExamSessionClient({ exam }) {
     setShowHint(prev => !prev);
   };
 
-  const handleViewSolution = async () => {
-    if (!studentAnswer.trim()) return;
-    setIsGenerating(true);
-    setShowSolution(true);
-    try {
-      const prompt = `Bạn là một giáo viên toán học Việt Nam giỏi. Hãy giải bài toán sau đây một cách chi tiết và dễ hiểu. Đề bài: "${currentQuestion.content}". Học sinh đã làm: "${studentAnswer}". Hãy đưa ra lời giải chuẩn xác, nhận xét bài làm của học sinh (nếu có) và trình bày bằng Markdown đẹp mắt.`
-      const response = await genAI.models.generateContent({ model: "gemini-3-flash-preview", contents: prompt });
-      setAiResponse(response.text || "Không thể tạo lời giải vào lúc này.");
-    } catch (error) {
-      console.error("Error generating solution:", error);
-      setAiResponse("Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại sau.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-  
   const handleUploadButtonClick = () => {
     fileInputRef.current?.click();
   };
@@ -160,7 +134,7 @@ export default function ExamSessionClient({ exam }) {
 
     setUploadError('');
     if (handwrittenImage) URL.revokeObjectURL(handwrittenImage);
-    
+
     setHandwrittenImageFile(file);
     setHandwrittenImage(URL.createObjectURL(file));
 
@@ -194,6 +168,38 @@ export default function ExamSessionClient({ exam }) {
       setUploadError(error.message || 'Không thể kết nối đến máy chủ nhận dạng.');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleSubmit = async (isAutoSubmit = false) => {
+    if (isSubmitting) return; // Ngăn chặn việc nộp bài nhiều lần
+
+    const confirmSubmission = isAutoSubmit ? true : window.confirm('Bạn có chắc chắn muốn nộp bài không? Hành động này không thể hoàn tác.');
+
+    if (confirmSubmission) {
+      setIsSubmitting(true);
+      try {
+        const response = await fetch(`/api/v1/exams/${exam._id}/submit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ answers }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert('Nộp bài thành công!');
+          // Chuyển hướng đến trang kết quả hoặc trang dashboard
+          router.push(`/submissions/${result.data.submissionId}`);
+        } else {
+          throw new Error(result.message || 'Có lỗi xảy ra khi nộp bài.');
+        }
+      } catch (error) {
+        alert(`Lỗi: ${error.message}`);
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -350,22 +356,6 @@ export default function ExamSessionClient({ exam }) {
                 </button>
               </div>
             </div>
-            {showSolution && (
-              <div className="fixed inset-0 z-[100] bg-[#141414]/60 backdrop-blur-md flex items-center justify-center p-6">
-                <div className="bg-white w-full max-w-3xl max-h-[85vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-                  <div className="p-8 border-b border-[#E5E5E5] flex items-center justify-between bg-white sticky top-0">
-                    <div><h3 className="text-xl font-bold tracking-tight">Lời giải chi tiết từ AI</h3><p className="text-xs text-[#8E9299] font-medium uppercase tracking-wider mt-0.5">Dựa trên bài làm của bạn</p></div>
-                    <button onClick={() => setShowSolution(false)} className="w-10 h-10 rounded-full hover:bg-[#F6F6F8] flex items-center justify-center transition-colors"><X size={24} /></button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-8 lg:p-10 prose prose-blue max-w-none">
-                    {isGenerating ? <div className="space-y-4"><div className="h-4 bg-[#F6F6F8] rounded-full w-3/4 animate-pulse" /><div className="h-4 bg-[#F6F6F8] rounded-full w-full animate-pulse" /><div className="h-4 bg-[#F6F6F8] rounded-full w-5/6 animate-pulse" /></div> : <div className="whitespace-pre-wrap">{aiResponse}</div>}
-                  </div>
-                  <div className="p-8 bg-[#F6F6F8] border-t border-[#E5E5E5] flex justify-end">
-                    <button onClick={() => setShowSolution(false)} className="px-8 py-3 bg-[#141414] text-white font-bold rounded-xl hover:bg-black transition-colors uppercase text-xs tracking-widest">Đóng</button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </main>
       );
@@ -446,7 +436,13 @@ export default function ExamSessionClient({ exam }) {
             <button disabled={currentQuestionIndex === questions.length - 1} onClick={() => goToQuestion(currentQuestionIndex + 1)} className="flex items-center gap-2 px-5 py-3 text-slate-600 font-semibold hover:bg-slate-100 rounded-xl transition-all disabled:opacity-30">Câu tiếp theo<ChevronRight size={20} /></button>
           </div>
           <div className="flex items-center gap-8">
-            <button className="bg-[#2463eb] hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2 active:scale-95"><Send size={18} />Nộp bài</button>
+            <button onClick={() => handleSubmit(false)} disabled={isSubmitting} className="bg-[#2463eb] hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-wait">
+              {isSubmitting ? (
+                <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />Đang nộp...</>
+              ) : (
+                <><Send size={18} />Nộp bài</>
+              )}
+            </button>
           </div>
         </div>
       </footer>
