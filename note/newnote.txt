@@ -126,7 +126,7 @@ vẫn chưa được, bạn kiểm tra theo dòng data xem có khi nào nó bị
 bạn nên kiểm tra giá trị mong muốn nhận được của fe và giá trị thực tế trả về từ be xem có gióng nhau không nhất là với trường select input, đảm bảo tính đồng nhất giữa font end và back end,  name của các trường giữa be và fe có đồng nhất không
 bây giờ tôi muốn tichs hợp dữ liệu từ be, bạn đoc lại code và cho tôi các khuyến nghị tốt
 sao bạn không dọc code be để xem dữ liệu trả về là gì
-tôi yêu càu bạn đọc kĩ file, và chỉ sửa nhũng phần đã thỏa thuận với tôi, bạn có thể thêm các đề xuất, những cải tiến nhưng phải thông báo với tôi trước để tránh vi phạm nguyên tắc giữ 100% giao diện và logic
+tôi yêu càu bạn đọc kĩ file, và chỉ sửa nhũng phần đã thỏa thuận với tôi, không được thay đổi tên biến, bạn có thể thêm các đề xuất, những cải tiến nhưng phải thông báo với tôi trước để tránh vi phạm nguyên tắc giữ 100% giao diện và logic
  }
 
 

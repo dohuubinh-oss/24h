@@ -2,6 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import errorHandler from './middleware/error.js';
 
@@ -9,7 +11,8 @@ import errorHandler from './middleware/error.js';
 import authRoutes from './routes/auth.js';
 import questionRoutes from './routes/question.js';
 import examRoutes from './routes/examRoutes.js';
-import submissionRoutes from './routes/submissionRoutes.js'; // Import submission routes
+import submissionRoutes from './routes/submissionRoutes.js';
+import ocrRoutes from './routes/ocr.js'; // Import OCR routes
 
 // Load env vars
 dotenv.config();
@@ -19,61 +22,57 @@ connectDB();
 
 const app = express();
 
+// Get __dirname in ES module scope
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Define allowed origins
 const allowedOrigins = [
-  'http://localhost:3000', // For local development
-  process.env.FRONTEND_URL, // For deployed/preview environments
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
     }
-    return callback(null, true);
   },
-  credentials: true, // Allow cookies to be sent
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
 
-// Body parser middleware - to accept req.body
+// Body parser middleware
 app.use(express.json());
 
 // Cookie parser middleware
 app.use(cookieParser());
 
+// Set static folder to serve uploaded files
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Mount routers
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/exams', examRoutes);
-app.use('/api/v1/submissions', submissionRoutes); // Mount submission routes
+app.use('/api/v1/submissions', submissionRoutes);
+app.use('/api/v1/ocr', ocrRoutes); // Mount OCR routes
 
 // Use the custom error handler middleware
 app.use(errorHandler);
 
-// A simple test route to check the proxy
-app.get('/api/v1/test', (req, res) => {
-  res.json({ message: 'Hello from the Express backend! The proxy is working!' });
-});
-
 app.get('/', (req, res) => {
-  const name = process.env.NAME || 'World';
-  res.send(`Hello ${name}!`);
+  res.send('API is running...');
 });
 
-// Use port 5000
-const port = parseInt(process.env.PORT) || 5000;
-const server = app.listen(port, () => {
-  console.log(`Backend server is listening on port ${port}`);
-});
+const PORT = process.env.PORT || 5000;
 
-// Handle unhandled promise rejections
+const server = app.listen(PORT, () => console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
+
 process.on('unhandledRejection', (err, promise) => {
   console.log(`Error: ${err.message}`);
-  // Close server & exit process
   server.close(() => process.exit(1));
 });

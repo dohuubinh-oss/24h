@@ -1,0 +1,120 @@
+/* Giao diện cơ bản cho trình soạn thảo Tiptap */
+.ProseMirror.tiptap-editor {
+  min-height: 320px; 
+  /* Tăng khoảng đệm để nội dung không bị dính sát vào các cạnh của trình soạn thảo */
+  padding: 1.5rem; 
+  background-color: #f8fafc; 
+  border: 1px solid #e2e8f0; 
+  border-radius: 0.5rem; 
+  transition: border-color 0.2s; 
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top-color: transparent;
+}
+
+/* KHI FOCUS */
+.ProseMirror.tiptap-editor:focus {
+  outline: none; /* Luôn giữ để bỏ viền mặc định của trình duyệt */
+  border-top-color: #e2e8f0; /* Hiện lại viền trên khi focus */
+}
+
+/* === TÙY CHỈNH THẺ HTML BÊN TRONG TRÌNH SOẠN THẢO === */
+
+/* Cỡ chữ cho các tiêu đề */
+.ProseMirror.tiptap-editor h1 {
+  font-size: 1.875rem; /* 30px */
+  line-height: 2.25rem; /* 36px */
+}
+
+.ProseMirror.tiptap-editor h2 {
+  font-size: 1.5rem; /* 24px */
+  line-height: 2rem; /* 32px */
+}
+
+.ProseMirror.tiptap-editor h3 {
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.75rem; /* 28px */
+}
+
+.ProseMirror.tiptap-editor h1, 
+.ProseMirror.tiptap-editor h2, 
+.ProseMirror.tiptap-editor h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  font-weight: 700;
+}
+
+.ProseMirror.tiptap-editor p {
+  margin: 0.5em 0;
+  line-height: 1.6;
+}
+
+/* === SỬA LỖI HIỂN THỊ DANH SÁCH === */
+.ProseMirror.tiptap-editor ul {
+  list-style-type: disc; /* Kiểu dấu chấm tròn */
+  list-style-position: outside; /* Đặt dấu chấm bên ngoài khối văn bản */
+  margin-left: 1.5rem;
+  padding-left: 1rem;
+}
+
+.ProseMirror.tiptap-editor ol {
+  list-style-type: decimal; /* Kiểu số thứ tự */
+  list-style-position: outside; /* Đặt số bên ngoài khối văn bản */
+  margin-left: 1.5rem;
+  padding-left: 1rem;
+}
+
+.ProseMirror.tiptap-editor blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 1rem;
+  margin-left: 0;
+  color: #64748b;
+}
+
+/* Thanh công cụ định dạng */
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  border-bottom: none; 
+  border-top-left-radius: 0.5rem; 
+  border-top-right-radius: 0.5rem;
+}
+
+.toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem; 
+  height: 2.25rem; 
+  border-radius: 0.375rem; 
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.toolbar .divider {
+  width: 1px;
+  height: 1.25rem;
+  background-color: #e2e8f0;
+  margin: 0 0.5rem;
+}
+
+/* === GIẢI PHÁP CHO TRANG LÀM BÀI THI === */
+/* Quy tắc này CHỈ áp dụng khi trình soạn thảo nằm trong vùng chứa đặc biệt */
+.exam-editor-container .ProseMirror.tiptap-editor {
+    border: none !important; /* Loại bỏ hoàn toàn đường viền */
+    background-color: transparent !important; /* Làm cho nền trong suốt */
+    /* Dòng padding: 0 !important đã được xóa để lấy padding 1.5rem mặc định */
+    min-height: auto !important;
+}
+
+.exam-editor-container .toolbar {
+    border: none;
+    background-color: transparent;
+    padding-left: 0;
+    padding-right: 0;
+}
