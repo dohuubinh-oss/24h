@@ -6,7 +6,6 @@ if (!API_KEY) {
 }
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// Cấu hình an toàn chung - chặn các nội dung không phù hợp ở mức độ vừa và cao
 const safetySettings = [
     {
       category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -26,12 +25,6 @@ const safetySettings = [
     },
 ];
 
-/**
- * Nhận dạng văn bản (chữ viết tay và chữ in) từ hình ảnh bằng Gemini Vision.
- * @param {Buffer} imageBuffer - Buffer của file ảnh.
- * @param {string} mimeType - Loại MIME của ảnh (ví dụ: 'image/jpeg', 'image/png').
- * @returns {Promise<string>} - Văn bản đã được nhận dạng.
- */
 export const getTextFromImage = async (imageBuffer, mimeType) => {
   const visionModel = genAI.getGenerativeModel({ 
     model: "gemini-1.5-flash",
@@ -64,17 +57,6 @@ export const getTextFromImage = async (imageBuffer, mimeType) => {
   }
 };
 
-
-// --- CÁC HÀM XỬ LÝ VĂN BẢN (Text-only) ---
-
-/**
- * Chấm điểm một câu trả lời tự luận bằng Gemini AI.
- * @param {string} question - Nội dung câu hỏi.
- * @param {string} studentAnswer - Câu trả lời của học sinh.
- * @param {string} modelAnswer - Đáp án mẫu (lời giải chi tiết).
- * @param {number} maxPoints - Thang điểm tối đa cho câu hỏi.
- * @returns {Promise<{score: number, feedback: string}>} - Điểm số và nhận xét từ AI.
- */
 export const gradeEssayByAI = async ({ question, studentAnswer, modelAnswer, maxPoints }) => {
   if (!studentAnswer || studentAnswer.trim() === '') {
     return { score: 0, feedback: 'Học sinh không trả lời.' };
@@ -84,7 +66,7 @@ export const gradeEssayByAI = async ({ question, studentAnswer, modelAnswer, max
     model: 'gemini-1.5-flash',
     safetySettings,
     generationConfig: {
-      responseMimeType: 'application/json', // Yêu cầu trả về JSON
+      responseMimeType: 'application/json',
     }
   });
 
@@ -116,7 +98,6 @@ export const gradeEssayByAI = async ({ question, studentAnswer, modelAnswer, max
     const responseText = result.response.text();
     const parsedResult = JSON.parse(responseText);
 
-    // Đảm bảo điểm số không vượt quá thang điểm
     if (parsedResult.score > maxPoints) {
         parsedResult.score = maxPoints;
     }
@@ -128,9 +109,6 @@ export const gradeEssayByAI = async ({ question, studentAnswer, modelAnswer, max
 
   } catch (error) {
     console.error("Lỗi khi chấm điểm bằng AI:", error);
-    return {
-      score: 0,
-      feedback: "Đã có lỗi xảy ra trong quá trình chấm điểm tự động. Vui lòng thử lại sau."
-    };
+    throw new Error("Lỗi khi tương tác với dịch vụ chấm điểm AI.");
   }
 };

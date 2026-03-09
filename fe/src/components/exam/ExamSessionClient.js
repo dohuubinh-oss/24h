@@ -178,13 +178,25 @@ export default function ExamSessionClient({ exam }) {
 
     if (confirmSubmission) {
       setIsSubmitting(true);
+
+      // Tạo một bản sao của các câu trả lời để gửi đi.
+      let finalAnswers = { ...answers };
+
+      // KIỂM TRA VÀ CẬP NHẬT TRƯỚC KHI GỬI
+      // Nếu câu hỏi hiện tại là câu tự luận,
+      // cập nhật ngay lập tức câu trả lời từ trình soạn thảo vào bản sao đó.
+      if (currentQuestion && currentQuestion.type === 'Tự luận') {
+        finalAnswers[currentQuestionIndex] = studentAnswer;
+      }
+
       try {
         const response = await fetch(`/api/v1/exams/${exam._id}/submit`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ answers }),
+          // Sử dụng các câu trả lời cuối cùng (finalAnswers) đã được cập nhật để gửi đi
+          body: JSON.stringify({ answers: finalAnswers }),
         });
 
         const result = await response.json();
@@ -203,7 +215,18 @@ export default function ExamSessionClient({ exam }) {
     }
   };
 
-  const answeredCount = Object.keys(answers).length;
+  const answeredCount = Object.keys(answers).filter(key => {
+    const index = parseInt(key, 10);
+    if (!questions[index]) return false;
+    const question = questions[index];
+    const answer = answers[key];
+
+    if (question.type === 'Tự luận') {
+      if (typeof answer !== 'string') return false;
+      return answer.replace(/<[^>]+>/g, '').trim() !== '';
+    }
+    return answer !== undefined && answer !== null;
+  }).length;
   const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
   if (!currentQuestion) {
@@ -218,7 +241,13 @@ export default function ExamSessionClient({ exam }) {
             <div className="grid grid-cols-4 gap-3">
               {questions.map((q, idx) => {
                   const isCurrent = currentQuestionIndex === idx;
-                  const isAnswered = answers[idx] !== undefined;
+                  const answer = answers[idx];
+                  let isAnswered;
+                  if (q.type === 'Tự luận') {
+                    isAnswered = answer && typeof answer === 'string' && answer.replace(/<[^>]+>/g, '').trim() !== '';
+                  } else {
+                    isAnswered = answer !== undefined && answer !== null;
+                  }
                   const isFlagged = flagged.has(idx);
                   let buttonClasses = 'bg-white border-2 border-slate-200 text-slate-400';
                   if (isAnswered) buttonClasses = 'bg-[#2463eb] text-white border-[#2463eb]';

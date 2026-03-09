@@ -1,44 +1,74 @@
 import mongoose from 'mongoose';
 
+const GradingDetailSchema = new mongoose.Schema({
+  score: {
+    type: Number,
+    required: true,
+  },
+  feedback: {
+    type: String,
+    required: true,
+  },
+}, { _id: false });
+
 const ExamSubmissionSchema = new mongoose.Schema({
-  // ... (các trường cũ giữ nguyên)
   exam: {
     type: mongoose.Schema.ObjectId,
     ref: 'Exam',
     required: true,
+    index: true,
   },
   user: {
     type: mongoose.Schema.ObjectId,
     ref: 'User',
     required: true,
+    index: true,
   },
   answers: {
     type: Map,
-    of: mongoose.Schema.Types.Mixed, // Lưu cả index (số) cho trắc nghiệm và text (chuỗi) cho tự luận
+    of: mongoose.Schema.Types.Mixed,
     required: true,
   },
-  score: {
+  
+  autoGradeScore: {
     type: Number,
-    required: true,
     default: 0,
   },
+  aiGradedScore: {
+    type: Number,
+    default: 0,
+  },
+  finalScore: {
+    type: Number,
+    default: 0,
+  },
+
+  gradingDetails: {
+    type: Map,
+    of: GradingDetailSchema,
+  },
+
+  gradingStatus: {
+    type: String,
+    enum: [
+      'pending_auto_grade',
+      'pending_ai_grade',
+      'grading_failed',
+      'pending_manual_review',
+      'fully_graded'
+    ],
+    default: 'pending_auto_grade',
+    required: true,
+  },
+
   totalCorrect: {
     type: Number,
-    required: true,
     default: 0,
   },
   totalQuestions: {
       type: Number,
       required: true,
   },
-
-  // --- TRƯỜNG MỚI ĐỂ THEO DÕI TRẠNG THÁI CHẤM BÀI ---
-  gradingStatus: {
-    type: String,
-    enum: ['auto_graded', 'pending_review', 'fully_graded'],
-    default: 'auto_graded', // Mặc định là đã chấm tự động
-  },
-  // --- CÁC TRƯỜNG KHÁC ---
   startedAt: {
     type: Date,
     default: Date.now,
@@ -50,13 +80,19 @@ const ExamSubmissionSchema = new mongoose.Schema({
     type: Number,
   }
 }, {
-  timestamps: true, // Tự động thêm createdAt và updatedAt
+  timestamps: true,
 });
 
-// Middleware để tính thời gian làm bài trước khi lưu
 ExamSubmissionSchema.pre('save', function(next) {
   if (this.isModified('submittedAt') && this.startedAt) {
     this.timeTaken = Math.round((this.submittedAt.getTime() - this.startedAt.getTime()) / 1000);
+  }
+  next();
+});
+
+ExamSubmissionSchema.pre('save', function(next) {
+  if (this.isModified('autoGradeScore') || this.isModified('aiGradedScore')) {
+    this.finalScore = (this.autoGradeScore || 0) + (this.aiGradedScore || 0);
   }
   next();
 });

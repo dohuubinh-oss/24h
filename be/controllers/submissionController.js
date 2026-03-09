@@ -1,11 +1,12 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import Exam from '../models/Exam.js';
 import ExamSubmission from '../models/ExamSubmission.js';
+import ErrorResponse from '../utils/errorResponse.js';
 
 // @desc    Submit answers for an exam
 // @route   POST /api/v1/exams/:id/submit
 // @access  Private
-const submitExam = asyncHandler(async (req, res) => {
+const submitExam = asyncHandler(async (req, res, next) => {
   const { id: examId } = req.params;
   const { answers } = req.body;
   const userId = req.user._id;
@@ -16,15 +17,14 @@ const submitExam = asyncHandler(async (req, res) => {
   });
 
   if (!exam) {
-    return res.status(404).json({ success: false, message: 'Không tìm thấy bài thi.' });
+    return next(new ErrorResponse('Không tìm thấy bài thi.', 404));
   }
 
   const questions = exam.questions;
   let score = 0;
   let totalCorrect = 0;
-  let hasEssayQuestions = false; // Biến để kiểm tra có câu tự luận hay không
+  let hasEssayQuestions = false;
 
-  // 1. Chấm điểm tự động và kiểm tra loại câu hỏi
   for (let i = 0; i < questions.length; i++) {
     const question = questions[i];
     const userAnswer = answers[i];
@@ -36,38 +36,57 @@ const submitExam = asyncHandler(async (req, res) => {
       }
     } else if (question.type === 'Tự luận') {
       hasEssayQuestions = true;
-      // Với câu tự luận, chúng ta chỉ cần lưu câu trả lời.
-      // Việc chấm điểm sẽ được thực hiện sau (bởi AI hoặc giáo viên).
     }
   }
 
-  // 2. Xác định trạng thái chấm bài
   const gradingStatus = hasEssayQuestions ? 'pending_review' : 'auto_graded';
 
-  // 3. Tạo và lưu lại kết quả nộp bài
   const submission = await ExamSubmission.create({
     exam: examId,
     user: userId,
-    answers, // Lưu tất cả câu trả lời (cả trắc nghiệm và tự luận)
-    score, // Điểm số hiện tại chỉ từ các câu trắc nghiệm
-    totalCorrect, // Số câu đúng hiện tại chỉ từ các câu trắc nghiệm
+    answers,
+    score,
+    totalCorrect,
     totalQuestions: questions.length,
-    gradingStatus, // Lưu trạng thái chấm bài
+    gradingStatus,
     submittedAt: new Date(),
   });
 
-  // 4. Trả kết quả về cho người dùng
   res.status(201).json({
     success: true,
     message: 'Nộp bài thành công!',
     data: {
       submissionId: submission._id,
-      score, // Trả về điểm số đã chấm tự động
+      score,
       totalCorrect,
       totalQuestions: questions.length,
-      gradingStatus, // Cho frontend biết trạng thái
+      gradingStatus,
     },
   });
 });
 
-export { submitExam };
+// @desc    Get a single submission by its ID
+// @route   GET /api/v1/submissions/:id
+// @access  Private (Chủ sở hữu hoặc Admin)
+const getSubmissionById = asyncHandler(async (req, res, next) => {
+  // Logic kiểm tra quyền đã được chuyển sang middleware, 
+  // controller giờ đây chỉ tập trung vào việc lấy và trả về dữ liệu.
+  const submission = await ExamSubmission.findById(req.params.id)
+    .populate({ path: 'user', select: 'name email' })
+    .populate({
+      path: 'exam',
+      populate: { path: 'questions', model: 'Question' },
+    });
+
+  // Middleware đã xử lý việc submission không tồn tại, nhưng để an toàn, ta vẫn có thể kiểm tra lại
+  if (!submission) {
+    return next(new ErrorResponse(`Không tìm thấy bài làm với ID ${req.params.id}`, 404));
+  }
+
+  res.status(200).json({
+    success: true,
+    data: submission,
+  });
+});
+
+export { submitExam, getSubmissionById };
