@@ -174,7 +174,6 @@ function AdminLayout({ children }) {
   };
 
   return (
-    <FilterProvider>
       <div className="min-h-screen flex flex-col bg-white">
         <header className="sticky top-0 z-40 w-full border-b border-slate-100 bg-white/90 backdrop-blur-md">
           <div className="px-6 h-16 flex items-center justify-between gap-4">
@@ -205,7 +204,6 @@ function AdminLayout({ children }) {
         </div>
 
       </div>
-    </FilterProvider>
   );
 }
 

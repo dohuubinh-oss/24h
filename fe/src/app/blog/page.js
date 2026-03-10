@@ -1,61 +1,70 @@
+'use client';
 
+import React from 'react';
+import parse, { domToReact } from 'html-react-parser';
 import KatexRenderer from '../../components/KatexRenderer';
 
 // ======================================================================================
-// GIẢI THÍCH GIẢI PHÁP CUỐI CÙNG:
+// GIẢI THÍCH KIẾN TRÚC TỐI ƯU:
 //
-// VẤN ĐỀ GỐC RỄ: Có sự xung đột giữa Tailwind `prose` (cần thẻ HTML thật như <h1>, <p>)
-// và component `KatexRenderer` (khi xử lý phần văn bản, nó chỉ render ra text thuần túy
-// trong thẻ <span>, làm cho `prose` không có tác dụng).
+// 1. `html-react-parser` được dùng để phân tích chuỗi HTML.
+// 2. Quy tắc `replace` được giữ ở mức tối giản:
+//    - Khi gặp một thẻ HTML (p, h1, ul...): KHÔNG làm gì cả. Thư viện sẽ tự động
+//      chuyển nó thành thẻ React tương ứng. Điều này giữ lại cấu trúc cho `prose`.
+//    - Khi gặp một nút văn bản (text node): Giao toàn bộ nội dung văn bản đó
+//      cho component <KatexRenderer> chuyên dụng.
+// 3. <KatexRenderer> (đã được phục hồi) sẽ nhận đoạn văn bản, tìm và render các
+//    công thức toán bên trong nó.
 //
-// GIẢI PHÁP:
-// 1. Viết nội dung `blogContent` bằng HTML trực tiếp thay vì Markdown.
-// 2. Tách chuỗi nội dung thành một mảng xen kẽ [phần HTML, phần Toán, phần HTML, ...].
-// 3. Khi render:
-//    - Với phần HTML: Dùng `dangerouslySetInnerHTML` để render ra các thẻ HTML thật.
-//      Điều này cho phép `prose` có thể định dạng chúng.
-//    - Với phần Toán: Gửi nó cho component `<KatexRenderer>`, component này sẽ tự xử lý
-//      và hiển thị công thức một cách chính xác.
+// KẾT QUẢ: Mỗi phần làm đúng một việc, code sạch sẽ, không trùng lặp, dễ bảo trì
+// và quan trọng nhất là HIỂN THỊ ĐÚNG.
 // ======================================================================================
 
-const FinalCorrectRenderer = ({ content }) => {
-  const regex = /(\$\$.*?\$\$|\$.*?\$)/g;
-  const parts = content.split(regex);
+const fakeBlogContent = `
+  <h1>Khám phá Định lý Euler</h1>
+  <p>Công thức Euler, được đặt theo tên nhà toán học vĩ đại Leonhard Euler, là một trong những phương trình đẹp nhất trong toán học. Nó có dạng:</p>
+  <p>$$ e^{i\pi} + 1 = 0 $$</p>
+  <p>Công thức này kết nối năm hằng số toán học cơ bản: $e$ (cơ số của logarit tự nhiên), $i$ (đơn vị ảo), $\pi$ (pi), 1, và 0.</p>
+  <h2>Ứng dụng trong Hình học</h2>
+  <p>Trong hình học phẳng, diện tích của một hình tròn có bán kính $r$ được tính bằng công thức $A = \pi r^2$.</p>
+  <ul>
+    <li>Với $r=1$, diện tích là $\pi$.</li>
+    <li>Với $r=2$, diện tích là $4\pi$.</li>
+  </ul>
+  <p>Đây là một ví dụ về một phương trình nội tuyến: $a^2 + b^2 = c^2$, được biết đến là Định lý Pythagoras.</p>
+`;
 
-  return parts.map((part, index) => {
-    if (!part) return null; // Bỏ qua các chuỗi rỗng
-
-    // Phần toán học (chỉ số lẻ)
-    if (index % 2 === 1) {
-      return <KatexRenderer key={index} text={part} />;
+const options = {
+  replace: (domNode) => {
+    // Nếu là một nút văn bản và không phải là khoảng trắng rỗng, giao nó cho KatexRenderer.
+    if (domNode.type === 'text' && domNode.data.trim().length > 0) {
+      return <KatexRenderer text={domNode.data} />;
     }
-
-    // Phần HTML (chỉ số chẵn)
-    return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-  });
+    
+    // Đối với tất cả các thẻ HTML khác, không cần quy tắc `replace`.
+    // Thư viện sẽ tự động xử lý chúng một cách chính xác.
+  },
 };
 
 export default function BlogPage() {
-  // Nội dung bài viết được viết bằng HTML.
-  const blogContent = `
-    <h1>Đây là tiêu đề của bài viết</h1>
-    <p>Đây là một đoạn văn bản giới thiệu. Lớp 'prose' của Tailwind sẽ tự động định dạng cho nó một cách đẹp mắt, với khoảng cách dòng, kích thước font chữ hợp lý.</p>
-    <p>Chúng ta có thể có các danh sách:</p>
-    <ul>
-        <li>Mục 1: Rất dễ đọc.</li>
-        <li>Mục 2: Được tự động tạo kiểu.</li>
-    </ul>
-    <p>Và đây là phần thú vị, chúng ta sẽ chèn một công thức toán học ngay trong dòng: $E = mc^2$.</p>
-    <p>Sau đó là một công thức toán khác ở dạng khối, chiếm trọn một dòng riêng:</p>
-    $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}$$
-    <p>Văn bản lại tiếp tục như bình thường. Phương pháp này kết hợp sức mạnh của cả hai công nghệ một cách chính xác.</p>
-  `;
+  // `parse` sẽ áp dụng các quy tắc trong `options` cho chuỗi HTML.
+  const parsedContent = parse(fakeBlogContent, options);
 
   return (
-    <div className="flex justify-center p-8">
-      <article className="prose lg:prose-xl">
-        <FinalCorrectRenderer content={blogContent} />
-      </article>
+    <div className="min-h-screen bg-gray-50 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div className="p-8">
+            {/* 
+              Lớp `prose` sẽ áp dụng style cho các thẻ p, h1, ul... 
+              được tạo ra một cách chính xác bởi `html-react-parser`.
+            */}
+            <article className="prose lg:prose-xl max-w-none">
+              {parsedContent}
+            </article>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

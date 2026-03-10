@@ -12,7 +12,8 @@ import authRoutes from './routes/auth.js';
 import questionRoutes from './routes/question.js';
 import examRoutes from './routes/examRoutes.js';
 import submissionRoutes from './routes/submissionRoutes.js';
-import ocrRoutes from './routes/ocr.js'; // Import OCR routes
+import ocrRoutes from './routes/ocr.js';
+import lessonRoutes from './routes/lessons.js'; // Reverted to standard import
 
 // Load env vars
 dotenv.config();
@@ -59,7 +60,8 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/exams', examRoutes);
 app.use('/api/v1/submissions', submissionRoutes);
-app.use('/api/v1/ocr', ocrRoutes); // Mount OCR routes
+app.use('/api/v1/ocr', ocrRoutes);
+app.use('/api/v1/lessons', lessonRoutes);
 
 // Use the custom error handler middleware
 app.use(errorHandler);

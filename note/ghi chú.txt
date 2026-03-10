@@ -1,5 +1,21 @@
-icon dùng lucide react, hỗ trợ đa màn hình: mobile, full hd, 2k 4k
-các cải tiến về SEO, performance
-dùng axios có sử dụng interceptors kết hợp Với Middleware để bảo vệ route chống truy cập
-dùng access token (lưu trong state của react) và refesh token lưu trong cookie để xử lý đăng xuất đăng nhập
-Khi thực hiện một yêu cầu mạng(gọi api)  từ bên trong một Server Component, chúng ta bắt buộc phải sử dụng một URL tuyệt đối (Absolute URL).
+1️⃣   icon dùng lucide react, hỗ trợ đa màn hình: mobile, full hd, 2k 4k
+2     các cải tiến về SEO, performance
+3️⃣   dùng axios có sử dụng interceptors kết hợp Với Middleware để bảo vệ route chống truy cập
+4       dùng access token (lưu trong state của react) và refesh token lưu trong cookie để xử lý đăng xuất đăng nhập
+5    Khi thực hiện một yêu cầu mạng(gọi api)  từ bên trong một Server Component, chúng ta bắt buộc phải sử dụng một URL tuyệt đối (Absolute URL).
+
+6   Cài đặt plugin:
+Chạy lệnh sau trong terminal:
+bash
+npm install -D @tailwindcss/typography
+# hoặc pnpm add -D @tailwindcss/typography
+Cấu hình trong file CSS chính (Tailwind 4):
+Mở file CSS toàn cục của bạn (ví dụ: app/globals.css) và import plugin:
+css
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+7   áp dụng một hệ thống màu sắc phân cấp cho trang "Tạo bài giảng"
+Nền chính:  Màu trắng (bg-white).
+Cấp 1 (Panel chính): Màu trắng (bg-white).
+Cấp 2 (Nội dung bên trong panel): Màu xám nhạt (bg-slate-100 hoặc bg-slate-50).
+Cấp 3 (Vùng nhập liệu/editor): Màu trắng (bg-white).

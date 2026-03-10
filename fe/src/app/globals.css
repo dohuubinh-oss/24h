@@ -1,5 +1,6 @@
 @import 'katex/dist/katex.min.css';
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* Set the default font for the entire application using the CSS variable from layout.js */
 body {

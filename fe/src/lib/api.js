@@ -94,4 +94,37 @@ export const setupInterceptors = (auth) => {
   );
 };
 
+// --- Lesson API Calls ---
+// GIẢI THÍCH SỬA LỖI:
+// Tất cả các hàm bên dưới đã được cập nhật để trả về `response.data.data`
+// thay vì `response.data`. Điều này là do API backend trả về dữ liệu được gói trong
+// một thuộc tính "data". Việc thay đổi này đảm bảo các component của chúng ta
+// nhận được đúng dữ liệu (mảng hoặc đối tượng) mà chúng cần để hoạt động.
+
+export const getAllLessons = async () => {
+  const response = await api.get('/lessons');
+  return response.data.data; // Sửa lỗi: Trích xuất mảng từ thuộc tính data
+};
+
+export const getLessonById = async (id) => {
+  const response = await api.get(`/lessons/${id}`);
+  return response.data.data; // Sửa lỗi: Trích xuất đối tượng từ thuộc tính data
+};
+
+export const createLesson = async (lessonData) => {
+  const response = await api.post('/lessons', lessonData);
+  return response.data.data; // Sửa lỗi: Nhất quán trong việc trả về dữ liệu
+};
+
+export const updateLesson = async (id, lessonData) => {
+  const response = await api.put(`/lessons/${id}`, lessonData);
+  return response.data.data; // Sửa lỗi: Nhất quán trong việc trả về dữ liệu
+};
+
+export const deleteLesson = async (id) => {
+  const response = await api.delete(`/lessons/${id}`);
+  return response.data.data; // Sửa lỗi: Nhất quán trong việc trả về dữ liệu
+};
+
+
 export default api;

@@ -18,19 +18,26 @@ export const AuthProvider = ({ children }) => {
   const accessTokenRef = useRef(null);
 
   const logout = useCallback(async () => {
-    console.log('Logging out...');
+    console.log('Attempting to log out...');
     try {
       await api.post('/auth/logout');
-    } catch (error) {
-      console.error('Logout API call failed, but proceeding with client-side cleanup:', error);
-    } finally {
+      console.log('Server has processed logout. Initiating redirect and clearing client state.');
+
+      // CRITICAL: Initiate redirect BEFORE clearing local state.
+      // This prevents re-renders on the current (protected) page from interrupting the navigation.
+      router.push('/');
+      
       setUser(null);
       accessTokenRef.current = null;
-      // Use window.location to force a full page reload to the login page
-      // This is more robust than router.push in clearing all state.
-      window.location.href = '/login';
+
+    } catch (error) {
+      console.error('Logout API call failed. Forcing client-side cleanup and redirect:', error);
+      // As a fallback, still redirect and clear local state, in the correct order.
+      router.push('/');
+      setUser(null);
+      accessTokenRef.current = null;
     }
-  }, []);
+  }, [router]);
 
   const setAuthState = useCallback(({ accessToken, user }) => {
     accessTokenRef.current = accessToken;
@@ -51,9 +58,6 @@ export const AuthProvider = ({ children }) => {
       try {
         console.log('Attempting to initialize auth session...');
         
-        // This initial call is to check for a valid refresh token (in the httpOnly cookie).
-        // We add a special header to tell our API interceptor to NOT try and refresh the token
-        // if this specific call fails, as that would cause a loop.
         const { data } = await api.post('/auth/refresh-token', {}, {
           headers: { 'X-Skip-Interceptor-Refresh': 'true' }
         });
@@ -62,12 +66,10 @@ export const AuthProvider = ({ children }) => {
           console.log('Auth session initialized successfully.');
           setAuthState(data);
         } else {
-           // Should not happen, but as a fallback, clear user state
            setUser(null);
            accessTokenRef.current = null;
         }
       } catch (error) {
-        // This is the expected path when no valid session/cookie is found.
         console.log('No active session found. User needs to log in.');
         setUser(null);
         accessTokenRef.current = null;
@@ -77,7 +79,7 @@ export const AuthProvider = ({ children }) => {
     };
     
     initializeAuth();
-  }, [setAuthState]); // setAuthState is stable due to useCallback
+  }, [setAuthState]);
 
   const login = async (credentials) => {
     const { data } = await api.post('/auth/login', credentials);
@@ -98,7 +100,6 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Show a loading indicator or nothing while checking auth state */}
       {loading ? null : children}
     </AuthContext.Provider>
   );
